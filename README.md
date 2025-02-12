@@ -34,3 +34,7 @@ For a more comprehensive example, see the [OpenAI Realtime Agents](https://githu
 ## License
 
 MIT
+
+## Documentation
+- [OpenAI Realtime API Documentation](https://platform.openai.com/docs/api-reference/realtime)
+- [Realtime API with WebRTC](https://platform.openai.com/docs/guides/realtime-webrtc)
