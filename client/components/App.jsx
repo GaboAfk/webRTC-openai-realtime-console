@@ -3,6 +3,23 @@ import logo from "/assets/openai-logomark.svg";
 import EventLog from "./EventLog";
 import SessionControls from "./SessionControls";
 import ToolPanel from "./ToolPanel";
+import React, { useEffect } from "react";
+import { initJanusSession } from "./janusIntegration";
+
+export default function App() {
+  useEffect(() => {
+    initJanusSession();
+  }, []);
+
+  return (
+    <div>
+      <h1>Integración con Janus</h1>
+      <audio id="localAudio" autoPlay muted />
+      <audio id="remoteAudio" autoPlay />
+      {/* Aquí se pueden agregar controles para iniciar/detener grabación, etc. */}
+    </div>
+  );
+}
 
 export default function App() {
   const [isSessionActive, setIsSessionActive] = useState(false);
