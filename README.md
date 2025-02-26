@@ -38,3 +38,16 @@ MIT
 ## Documentation
 - [OpenAI Realtime API Documentation](https://platform.openai.com/docs/api-reference/realtime)
 - [Realtime API with WebRTC](https://platform.openai.com/docs/guides/realtime-webrtc)
+
+## Janus
+### Docker
+```bash
+docker pull canyan/janus-gateway:latest
+docker run -d  -p 8188:8188 -p 8088:8088 -p 8089:8089 --name janus_container canyan/janus-gateway:latest /usr/local/bin/janus -F /usr/local/etc/janus 
+```
+### Janus-Gateway
+```bash
+git clone https://github.com/meetecho/janus-gateway.git
+cd janus-gateway/html/
+python3 -m http.server 8000
+```
