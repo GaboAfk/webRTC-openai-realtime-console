@@ -43,7 +43,8 @@ MIT
 ### Docker
 ```bash
 docker pull canyan/janus-gateway:latest
-docker run -d  -p 8188:8188 -p 8088:8088 -p 8089:8089 --name janus_container canyan/janus-gateway:latest /usr/local/bin/janus -F /usr/local/etc/janus 
+docker run -d  -p 8188:8188 -p 8088:8088 -p 8089:8089 --name janus_container canyan/janus-gateway:latest /usr/local/bin/janus -F /usr/local/etc/janus
+cd usr/local/etc/janus
 ```
 ### Janus-Gateway
 ```bash

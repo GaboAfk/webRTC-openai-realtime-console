@@ -25,7 +25,7 @@ function SessionStopped({ startSession }) {
   );
 }
 
-function SessionActive({ stopSession, sendTextMessage }) {
+function SessionActive({ stopSession, sendTextMessage, janusConnected }) {
   const [message, setMessage] = useState("");
 
   function handleSendClientEvent() {
@@ -54,9 +54,9 @@ function SessionActive({ stopSession, sendTextMessage }) {
           }
         }}
         icon={<MessageSquare height={16} />}
-        className="bg-blue-400"
+        className={`${janusConnected ? 'bg-green-500' : 'bg-blue-400'}`}
       >
-        send text
+        {janusConnected ? 'send via Janus' : 'send text'}
       </Button>
       <Button onClick={stopSession} icon={<CloudOff height={16} />}>
         disconnect
@@ -72,6 +72,7 @@ export default function SessionControls({
   sendTextMessage,
   serverEvents,
   isSessionActive,
+  janusConnected
 }) {
   return (
     <div className="flex gap-4 border-t-2 border-gray-200 h-full rounded-md">
@@ -81,6 +82,7 @@ export default function SessionControls({
           sendClientEvent={sendClientEvent}
           sendTextMessage={sendTextMessage}
           serverEvents={serverEvents}
+          janusConnected={janusConnected}
         />
       ) : (
         <SessionStopped startSession={startSession} />
