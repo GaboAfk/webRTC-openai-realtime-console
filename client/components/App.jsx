@@ -3,7 +3,6 @@ import logo from "/assets/openai-logomark.svg";
 import EventLog from "./EventLog";
 import SessionControls from "./SessionControls";
 import ToolPanel from "./ToolPanel";
-import React, { useEffect } from "react";
 import JanusClient from "./JanusClient";
 
 export default function App() {
@@ -17,24 +16,26 @@ export default function App() {
   const openAiStreamRef = useRef(null);
   const janusStreamRef = useRef(null);
 
-
   async function startSession() {
     // Get an ephemeral key from the Fastify server
     const tokenResponse = await fetch("/token");
     const data = await tokenResponse.json();
     const EPHEMERAL_KEY = data.client_secret.value;
     const realtime_model = data.model;
-
+    
     // Create a peer connection
     const pc = new RTCPeerConnection();
 
     // Set up to play remote audio from the model
     audioElement.current = document.createElement("audio");
     audioElement.current.autoplay = true;
-
+    
     pc.ontrack = (e) => {
-      audioElement.current = e.streams[0];
-
+      // Store the OpenAI audio stream
+      openAiStreamRef.current = e.streams[0];
+      
+      // If we're using Janus, we'll forward this stream to Janus
+      // Otherwise play it directly
       if (janusConnected) {
         if (janusClientRef.current) {
           janusClientRef.current.sendAudioToJanus(e.streams[0]);
@@ -44,23 +45,25 @@ export default function App() {
       }
     };
 
+    // We need to modify how we handle local audio
     try {
       let ms;
-
+      
       if (janusConnected && janusStreamRef.current) {
+        // Use the audio from Janus
         ms = janusStreamRef.current;
       } else {
-        // Add local audio track for microphone input in the browser
+        // Use the local microphone
         ms = await navigator.mediaDevices.getUserMedia({
           audio: true,
         });
       }
-
+      
+      // Add the track to the peer connection
       pc.addTrack(ms.getTracks()[0]);
-    } catch (e) {
-      console.error("Error accessing audio device:", e);
+    } catch (err) {
+      console.error("Error accessing audio device:", err);
     }
-
 
     // Set up data channel for sending and receiving events
     const dc = pc.createDataChannel("oai-events");
@@ -90,45 +93,46 @@ export default function App() {
     peerConnection.current = pc;
   }
 
-  // Inicialize Janus client
+  // Initialize JanusClient
   useEffect(() => {
     if (isSessionActive) {
-      // Create new instance of Janus client
+      // Create a new instance of JanusClient
       const janusClient = JanusClient({
         onModelAudio: (stream) => {
-          // Audio from other peer in the room
+          // We got audio from other participants in the room
           janusStreamRef.current = stream;
-
+          
+          // If we're not connected to OpenAI yet, play this directly
           if (!openAiStreamRef.current) {
             audioElement.current.srcObject = stream;
           }
-      },
-      onUserAudio: (stream) => {
-        // Audio mixed from the room, including our own voice
-        // this would be sent to the model
-        if (peerConnection.current) {
-          const sender = peerConnection.current.getSenders().find((s) => s.track.kind === "audio");
-          if (sender && stream.getAudioTracks().length > 0) {
-            sender.replaceTrack(stream.getAudioTracks()[0]);
+        },
+        onUserAudio: (stream) => {
+          // We got the mixed audio from the room, including our own voice
+          // This would be sent to OpenAI
+          if (peerConnection.current) {
+            const sender = peerConnection.current.getSenders().find(s => s.track.kind === 'audio');
+            if (sender && stream.getAudioTracks().length > 0) {
+              sender.replaceTrack(stream.getAudioTracks()[0]);
+            }
           }
-        }
-      },
-      onJanusConnected: () => {
-        setJanusConnected(true);
-        console.log("Janus connected successfully");
-      },
-      onJanusDisconnected: () => {
-        setJanusConnected(false);
-        console.log("Janus disconnected");
-      },
-      isSessionActive
+        },
+        onJanusConnected: () => {
+          setJanusConnected(true);
+          console.log("Janus connected successfully");
+        },
+        onJanusDisconnected: () => {
+          setJanusConnected(false);
+          console.log("Janus disconnected");
+        },
+        isSessionActive
       });
-
+      
       janusClientRef.current = janusClient;
     }
-
+    
     return () => {
-      // Clean up Janus client
+      // Clean up
       if (janusClientRef.current) {
         janusClientRef.current.destroy();
         janusClientRef.current = null;
@@ -136,7 +140,7 @@ export default function App() {
     };
   }, [isSessionActive]);
 
-  // Forward OpenAi audio stream to Janus when available
+  // Forward OpenAI audio to Janus when available
   useEffect(() => {
     if (janusConnected && openAiStreamRef.current && janusClientRef.current) {
       janusClientRef.current.sendAudioToJanus(openAiStreamRef.current);
@@ -155,7 +159,7 @@ export default function App() {
           sender.track.stop();
         }
       });
-
+      
       peerConnection.current.close();
     }
 
@@ -225,7 +229,7 @@ export default function App() {
       <nav className="absolute top-0 left-0 right-0 h-16 flex items-center">
         <div className="flex items-center gap-4 w-full m-4 pb-2 border-0 border-b border-solid border-gray-200">
           <img style={{ width: "24px" }} src={logo} />
-          <h1>realtime console</h1>
+          <h1>realtime console {janusConnected ? ' + Janus Bridge' : ''}</h1>
         </div>
       </nav>
       <main className="absolute top-16 left-0 right-0 bottom-0">
@@ -241,6 +245,7 @@ export default function App() {
               sendTextMessage={sendTextMessage}
               events={events}
               isSessionActive={isSessionActive}
+              janusConnected={janusConnected}
             />
           </section>
         </section>

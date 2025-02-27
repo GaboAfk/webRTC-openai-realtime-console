@@ -8,6 +8,11 @@ const port = process.env.PORT || 3000;
 const apiKey = process.env.OPENAI_API_KEY;
 const realtime_model = process.env.REALTIME_MODEL;
 
+// Configuración de Janus
+const janusServer = process.env.JANUS_SERVER || "wss://your-janus-server.com/janus";
+const janusRoom = process.env.JANUS_ROOM || "1234"; // ID de la sala de audiobridge
+const janusApiSecret = process.env.JANUS_API_SECRET || ""; // Si es necesario
+
 // Configure Vite middleware for React client
 const vite = await createViteServer({
   server: { middlewareMode: true },
@@ -41,6 +46,15 @@ app.get("/token", async (req, res) => {
   }
 });
 
+// Endpoint para configuración de Janus
+app.get("/janus-config", (req, res) => {
+  res.json({
+    server: janusServer,
+    room: janusRoom,
+    apiSecret: janusApiSecret || null
+  });
+});
+
 // Render the React client
 app.use("*", async (req, res, next) => {
   const url = req.originalUrl;
@@ -62,4 +76,5 @@ app.use("*", async (req, res, next) => {
 
 app.listen(port, () => {
   console.log(`Express server running on *:${port}`);
+  console.log(`Janus integration enabled for room ${janusRoom}`);
 });
